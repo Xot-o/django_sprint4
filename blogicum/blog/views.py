@@ -43,7 +43,6 @@ def info_profile(request, name):
         username=name,
     )
     profile_post = Post.objects.filter(author=user.id)
-    print(user)
     paginator = Paginator(profile_post, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)

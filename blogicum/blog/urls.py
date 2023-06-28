@@ -28,8 +28,8 @@ urlpatterns = [
     path('posts/<int:post_id>/delete_comment/<int:comment_id>',
          views.delete_comment,
          name='delete_comment'),
-    path('profile/<name>/', views.info_profile, name='profile'),
-    path('edit_profile/<slug:name>',
+    path('profile/<username>/', views.profile_view, name='profile'),
+    path('edit_profile/<slug:username>/',
          views.edit_profile,
          name='edit_profile'),
 ]

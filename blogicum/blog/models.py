@@ -5,7 +5,7 @@ from django.utils import timezone
 User = get_user_model()
 
 
-class IsPublishedCreatedAt(models.Model):
+class BaseModelForm(models.Model):
     """Абстрактная модель,
     добавляет флаг is_published(опубликован ли пост),
     и время создания поста created_at.
@@ -22,7 +22,7 @@ class IsPublishedCreatedAt(models.Model):
         abstract = True
 
 
-class Category(IsPublishedCreatedAt):
+class Category(BaseModelForm):
     """Класс отвечающий за категории постов."""
     title = models.CharField('Заголовок', max_length=256)
     description = models.TextField('Описание')
@@ -42,7 +42,7 @@ class Category(IsPublishedCreatedAt):
         return self.title
 
 
-class Location(IsPublishedCreatedAt):
+class Location(BaseModelForm):
     """Класс отвечающий за местоположения в постах."""
     name = models.CharField('Название места', max_length=256, unique=True)
 
@@ -54,11 +54,14 @@ class Location(IsPublishedCreatedAt):
         return self.name
 
 
-class Post(IsPublishedCreatedAt):
+class Post(BaseModelForm):
     """Основной класс , отвечающий за пост , и всю информацию в нем."""
     title = models.CharField('Заголовок', max_length=256)
     text = models.TextField('Текст')
-    picture = models.ImageField('Фото', blank=True)
+    comment_count = models.IntegerField(
+        'Количество комментариев',
+        default=0)
+    image = models.ImageField('Фото', blank=True)
     pub_date = models.DateTimeField(
         'Дата и время публикации',
         default=timezone.now(),

@@ -26,29 +26,40 @@ class ProfileLoginView(LoginView):
         return url
 
 
-def edit_profile(request, name):
-    instance = get_object_or_404(User, username=name)
-    if instance.username != request.user.username:
-        return redirect('login')
-    form = ProfileForm(request.POST or None, instance=instance)
-    context = {'form': form}
-    if form.is_valid():
+@login_required
+def edit_profile(request, username):
+    """Отображает страницу редактирования профиля."""
+    profile_user = get_object_or_404(User, username=username)
+
+    form = ProfileForm(request.POST or None, profile_user=profile_user)
+    if request.method == 'POST' and form.is_valid():
         form.save()
+
+    context = {
+        'form': form
+    }
     return render(request, 'blog/user.html', context)
 
 
-def info_profile(request, name):
-    user = get_object_or_404(
-        User,
-        username=name,
-    )
-    profile_post = user.posts.all()
-    paginator = Paginator(profile_post, 10)
+@login_required
+def profile_view(request, username):
+    """Отображает профиль пользователя."""
+    profile_user = get_object_or_404(User, username=username)
+    posts = Post.objects.filter(author=profile_user).order_by('-pub_date')
+    can_edit_profile = request.user == profile_user
+
+    paginator = Paginator(posts, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+
+    post_images = [post.image for post in posts if post.image]
+
     context = {
-        'profile': user,
+        'profile': profile_user,
+        'posts': posts,
+        'can_edit_profile': can_edit_profile,
         'page_obj': page_obj,
+        'post_images': post_images,
     }
     return render(request, 'blog/profile.html', context)
 
@@ -162,6 +173,8 @@ def add_comment(request, pk):
         comment.author = request.user
         comment.post = post
         comment.save()
+        post.comment_count += 1
+        post.save()
     return redirect('blog:post_detail', pk=pk)
 
 @login_required
@@ -183,10 +196,13 @@ def edit_comment(request, comment_id, post_id):
 @login_required
 def delete_comment(request, comment_id, post_id):
     instance = get_object_or_404(Comment, id=comment_id, post_id=post_id)
+    post = get_object_or_404(Post, pk=post_id)
     if instance.author != request.user:
         return redirect('login')
     context = {'comment': instance}
     if request.method == 'POST':
         instance.delete()
+        post.comment_count -= 1
+        post.save()
         return redirect('blog:post_detail', pk=post_id)
     return render(request, 'blog/comment.html', context)

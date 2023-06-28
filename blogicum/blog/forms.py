@@ -15,7 +15,8 @@ class PostForm(forms.ModelForm):
             'pub_date': forms.DateTimeInput(
                 format='%d/%m/%Y %H:%M',
                 attrs={'type': 'datetime-local'}
-            )
+            ),
+            'comment_count': forms.HiddenInput()
         }
 
 

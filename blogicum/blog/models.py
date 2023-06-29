@@ -23,7 +23,7 @@ class IsPublishedCreatedAt(models.Model):
 
 
 class Category(IsPublishedCreatedAt):
-    """Класс отвечающий за категории постов."""
+    """Класс категорий постов."""
     title = models.CharField('Заголовок', max_length=256)
     description = models.TextField('Описание')
     slug = models.SlugField(
@@ -43,7 +43,7 @@ class Category(IsPublishedCreatedAt):
 
 
 class Location(IsPublishedCreatedAt):
-    """Класс отвечающий за местоположения в постах."""
+    """Класс местоположений в постах."""
     name = models.CharField('Название места', max_length=256, unique=True)
 
     class Meta:
@@ -55,7 +55,7 @@ class Location(IsPublishedCreatedAt):
 
 
 class Post(IsPublishedCreatedAt):
-    """Основной класс , отвечающий за пост , и всю информацию в нем."""
+    """Основной класс постов и вся информацию о них."""
     title = models.CharField('Заголовок', max_length=256)
     text = models.TextField('Текст')
     image = models.ImageField('Фото', blank=True)
@@ -90,7 +90,7 @@ class Post(IsPublishedCreatedAt):
     comment_count = models.IntegerField(
         'Количество комментариев',
         default=0,
-        )
+    )
 
     class Meta:
         verbose_name = 'публикация'
@@ -101,6 +101,7 @@ class Post(IsPublishedCreatedAt):
 
 
 class Comment(models.Model):
+    '''Класс комментариев.'''
     text = models.TextField('Текст комментария')
     post = models.ForeignKey(
         Post,

@@ -16,6 +16,7 @@ from blog.forms import PostForm, CommentForm, ProfileForm
 
 class ProfileLoginView(LoginView):
     def get_success_url(self):
+        '''Получение адреса.'''
         url = reverse(
             'blog:profile',
             args=(self.request.user.get_username(),)
@@ -34,7 +35,6 @@ def edit_profile(request, username):
     if form.is_valid():
         form.save()
     return render(request, 'blog/user.html', context)
-
 
 
 def profile_view(request, username):
@@ -60,6 +60,7 @@ def profile_view(request, username):
 
 
 class PostListView(ListView):
+    '''Отображает посты на странице.'''
     template_name = 'blog/index.html'
     current_time = dt.datetime.now()
     model = Post
@@ -95,6 +96,7 @@ def category_posts(request, category_slug):
 
 
 class PostCreateView(LoginRequiredMixin, CreateView):
+    '''Создание нового поста.'''
     model = Post
     form_class = PostForm
     template_name = 'blog/create.html'
@@ -105,6 +107,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
+        '''Получение адреса.'''
         if self.request.user.is_authenticated:
             url = reverse(
                 'blog:profile',
@@ -116,6 +119,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
 
 
 class PostUpdateView(LoginRequiredMixin, UpdateView):
+    '''Отображение поста.'''
     model = Post
     form_class = PostForm
     template_name = 'blog/create.html'
@@ -133,6 +137,7 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
 
 
 class PostDeleteView(LoginRequiredMixin, DeleteView):
+    '''Удаление поста.'''
     model = Post
     success_url = reverse_lazy('blog:index')
     template_name = 'blog/create.html'
@@ -145,6 +150,7 @@ class PostDeleteView(LoginRequiredMixin, DeleteView):
 
 
 class PostDetailView(DetailView):
+    '''Детализированное отображение поста.'''
     model = Post
     template_name = 'blog/detail.html'
 
@@ -159,9 +165,9 @@ class PostDetailView(DetailView):
         return context
 
 
-
 @login_required
 def add_comment(request, pk):
+    '''Добавление комментария.'''
     post = get_object_or_404(Post, pk=pk)
     form = CommentForm(request.POST)
     if form.is_valid():
@@ -173,8 +179,10 @@ def add_comment(request, pk):
         post.save()
     return redirect('blog:post_detail', pk=pk)
 
+
 @login_required
 def edit_comment(request, comment_id, post_id):
+    '''Редактирование комментария.'''
     instance = get_object_or_404(Comment, id=comment_id, post_id=post_id)
     if instance.author != request.user:
         return redirect('login')
@@ -191,6 +199,7 @@ def edit_comment(request, comment_id, post_id):
 
 @login_required
 def delete_comment(request, comment_id, post_id):
+    '''Удаление комментария.'''
     instance = get_object_or_404(Comment, id=comment_id, post_id=post_id)
     post = get_object_or_404(Post, pk=post_id)
     if instance.author != request.user:

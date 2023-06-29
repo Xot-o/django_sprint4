@@ -5,7 +5,7 @@ from django.utils import timezone
 User = get_user_model()
 
 
-class BaseModelForm(models.Model):
+class IsPublishedCreatedAt(models.Model):
     """Абстрактная модель,
     добавляет флаг is_published(опубликован ли пост),
     и время создания поста created_at.
@@ -22,7 +22,7 @@ class BaseModelForm(models.Model):
         abstract = True
 
 
-class Category(BaseModelForm):
+class Category(IsPublishedCreatedAt):
     """Класс отвечающий за категории постов."""
     title = models.CharField('Заголовок', max_length=256)
     description = models.TextField('Описание')
@@ -42,7 +42,7 @@ class Category(BaseModelForm):
         return self.title
 
 
-class Location(BaseModelForm):
+class Location(IsPublishedCreatedAt):
     """Класс отвечающий за местоположения в постах."""
     name = models.CharField('Название места', max_length=256, unique=True)
 
@@ -54,13 +54,10 @@ class Location(BaseModelForm):
         return self.name
 
 
-class Post(BaseModelForm):
+class Post(IsPublishedCreatedAt):
     """Основной класс , отвечающий за пост , и всю информацию в нем."""
     title = models.CharField('Заголовок', max_length=256)
     text = models.TextField('Текст')
-    comment_count = models.IntegerField(
-        'Количество комментариев',
-        default=0)
     image = models.ImageField('Фото', blank=True)
     pub_date = models.DateTimeField(
         'Дата и время публикации',
@@ -90,6 +87,10 @@ class Post(BaseModelForm):
         null=True,
         verbose_name='Категория'
     )
+    comment_count = models.IntegerField(
+        'Количество комментариев',
+        default=0,
+        )
 
     class Meta:
         verbose_name = 'публикация'
@@ -97,19 +98,6 @@ class Post(BaseModelForm):
 
     def __str__(self):
         return self.title
-
-
-class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    bio = models.TextField(null=True, blank=True)
-    avatar = models.ImageField(
-        null=True,
-        blank=True,
-        upload_to="images/profile/"
-    )
-
-    def __str__(self):
-        return str(self.user)
 
 
 class Comment(models.Model):
@@ -133,4 +121,4 @@ class Comment(models.Model):
         ordering = ('created_at',)
 
     def __str__(self):
-        return self.text
+        return self.text[:30]

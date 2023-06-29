@@ -1,19 +1,16 @@
-from typing import Any
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import User
+from django.contrib.auth.views import LoginView
+from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404, render, redirect
+from django.urls import reverse, reverse_lazy
+import datetime as dt
 from django.views.generic import (
     CreateView, DeleteView, DetailView, ListView, UpdateView
 )
-from django.contrib.auth.views import LoginView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
-from django.urls import reverse
-from django.urls import reverse_lazy
-from django.shortcuts import get_object_or_404, render, redirect
-import datetime as dt
-
 
 from blog.models import Post, Category, Comment
-from django.contrib.auth.models import User
 from blog.forms import PostForm, CommentForm, ProfileForm
 
 
@@ -28,16 +25,14 @@ class ProfileLoginView(LoginView):
 
 @login_required
 def edit_profile(request, username):
-    """Отображает страницу редактирования профиля."""
-    profile_user = get_object_or_404(User, username=username)
-
-    form = ProfileForm(request.POST or None, profile_user=profile_user)
-    if request.method == 'POST' and form.is_valid():
+    '''Изменение профиля пользователя.'''
+    user = get_object_or_404(User, username=username)
+    if user.username != request.user.username:
+        return redirect('login')
+    form = ProfileForm(request.POST or None, instance=user)
+    context = {'form': form}
+    if form.is_valid():
         form.save()
-
-    context = {
-        'form': form
-    }
     return render(request, 'blog/user.html', context)
 
 
@@ -105,6 +100,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
     template_name = 'blog/create.html'
 
     def form_valid(self, form):
+        """Проверка валидности формы."""
         form.instance.author = self.request.user
         return super().form_valid(form)
 

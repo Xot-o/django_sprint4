@@ -100,10 +100,6 @@ class Post(IsPublished, CreatedAt):
         null=True,
         verbose_name='Категория'
     )
-    comment_count = models.IntegerField(
-        'Количество комментариев',
-        default=0,
-    )
 
     class Meta:
         verbose_name = 'публикация'
@@ -116,7 +112,6 @@ class Post(IsPublished, CreatedAt):
 class Comment(CreatedAt):
     """Класс комментариев."""
     text = models.TextField('Текст комментария')
-    created_at = models.DateTimeField('Добавлено', auto_now_add=True)
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,

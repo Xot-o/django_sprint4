@@ -76,7 +76,7 @@ class PostListView(ListView):
         is_published=True,
         pub_date__lte=dt.datetime.now(),
         category__is_published=True
-    ).select_related('author')
+    ).select_related('author').annotate(comment_count=Count('comment__post'))
     ordering = '-pub_date'
     paginate_by = settings.PAGINATE_BY
 
@@ -174,7 +174,6 @@ def add_comment(request, pk):
         comment.author = request.user
         comment.post = post
         comment.save()
-        Post.objects.annotate(comment_count=Count("comment"))
     return redirect('blog:post_detail', pk=pk)
 
 
@@ -205,6 +204,5 @@ def delete_comment(request, comment_id, post_id):
     context = {'comment': instance}
     if request.method == 'POST':
         instance.delete()
-        Post.objects.annotate(comment_count=Count("comment"))
         return redirect('blog:post_detail', pk=post_id)
     return render(request, 'blog/comment.html', context)

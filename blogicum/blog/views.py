@@ -123,7 +123,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        '''Получение адреса.'''
+        """Получение адреса."""
         url = reverse(
             'blog:profile',
             args=(self.request.user.get_username(),)

@@ -24,7 +24,8 @@ class IsPublished(models.Model):
 
 class CreatedAt(models.Model):
     """Абстрактная модель,
-    Определяет время создания поста created_at."""
+    Определяет время создания поста created_at.
+    """
     created_at = models.DateTimeField('Добавлено', auto_now_add=True)
 
     class Meta:

@@ -49,7 +49,11 @@ def edit_profile(request, username):
 def profile_view(request, username):
     """Отображает профиль пользователя."""
     profile_user = get_object_or_404(User, username=username)
-    posts = Post.objects.filter(author=profile_user).order_by('-pub_date')
+    posts = Post.objects.filter(
+        author=profile_user
+    ).order_by(
+        '-pub_date'
+    ).annotate(comment_count=Count('comment__post'))
     can_edit_profile = request.user == profile_user
 
     paginator = Paginator(posts, settings.PAGINATE_BY)
@@ -198,7 +202,7 @@ def edit_comment(request, comment_id, post_id):
 def delete_comment(request, comment_id, post_id):
     """Удаление комментария."""
     instance = get_object_or_404(Comment, id=comment_id, post_id=post_id)
-    post = get_object_or_404(Post, pk=post_id)
+    get_object_or_404(Post, pk=post_id)
     if instance.author != request.user:
         return redirect('blog:post_detail', pk=post_id)
     context = {'comment': instance}

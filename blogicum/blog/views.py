@@ -1,11 +1,14 @@
+import datetime as dt
+
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse, reverse_lazy
-import datetime as dt
+from django.db.models import Count
 from django.views.generic import (
     CreateView, DeleteView, DetailView, ListView, UpdateView
 )
@@ -16,7 +19,7 @@ from blog.forms import PostForm, CommentForm, ProfileForm
 
 class ProfileLoginView(LoginView):
     def get_success_url(self):
-        '''Получение адреса.'''
+        """Получение адреса."""
         url = reverse(
             'blog:profile',
             args=(self.request.user.get_username(),)
@@ -24,9 +27,15 @@ class ProfileLoginView(LoginView):
         return url
 
 
+def get_page_obj(paginator, page_number):
+    """Получаем страницу с постами."""
+    get_page_obj = paginator.get_page(page_number)
+    return get_page_obj
+
+
 @login_required
 def edit_profile(request, username):
-    '''Изменение профиля пользователя.'''
+    """Изменение профиля пользователя."""
     user = get_object_or_404(User, username=username)
     if user.username != request.user.username:
         return redirect('login')
@@ -43,9 +52,9 @@ def profile_view(request, username):
     posts = Post.objects.filter(author=profile_user).order_by('-pub_date')
     can_edit_profile = request.user == profile_user
 
-    paginator = Paginator(posts, 10)
+    paginator = Paginator(posts, settings.PAGINATE_BY)
     page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = get_page_obj(paginator, page_number)
 
     post_images = [post.image for post in posts if post.image]
 
@@ -60,34 +69,32 @@ def profile_view(request, username):
 
 
 class PostListView(ListView):
-    '''Отображает посты на странице.'''
+    """Отображает посты на странице."""
     template_name = 'blog/index.html'
-    current_time = dt.datetime.now()
     model = Post
     queryset = Post.objects.filter(
         is_published=True,
-        pub_date__lte=current_time,
+        pub_date__lte=dt.datetime.now(),
         category__is_published=True
     ).select_related('author')
     ordering = '-pub_date'
-    paginate_by = 10
+    paginate_by = settings.PAGINATE_BY
 
 
 def category_posts(request, category_slug):
     """Функция отвечает за вывод категории поста."""
-    current_time = dt.datetime.now()
     category = get_object_or_404(
         Category,
         slug=category_slug,
         is_published=True,
     )
     post_list = category.posts.filter(
-        pub_date__lte=current_time,
+        pub_date__lte=dt.datetime.now(),
         is_published=True,
     )
-    paginator = Paginator(post_list, 10)
+    paginator = Paginator(post_list, settings.PAGINATE_BY)
     page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = get_page_obj(paginator, page_number)
     context = {
         'category': category,
         'page_obj': page_obj
@@ -95,8 +102,17 @@ def category_posts(request, category_slug):
     return render(request, 'blog/category.html', context)
 
 
+class DispatchMixin:
+    def dispatch(self, request, *args, **kwargs):
+        """Отправляет изменения/удаления поста."""
+        self.post_id = kwargs['pk']
+        if self.get_object().author != request.user:
+            return redirect('blog:post_detail', pk=kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
+
+
 class PostCreateView(LoginRequiredMixin, CreateView):
-    '''Создание нового поста.'''
+    """Создание нового поста."""
     model = Post
     form_class = PostForm
     template_name = 'blog/create.html'
@@ -108,49 +124,32 @@ class PostCreateView(LoginRequiredMixin, CreateView):
 
     def get_success_url(self):
         '''Получение адреса.'''
-        if self.request.user.is_authenticated:
-            url = reverse(
-                'blog:profile',
-                args=(self.request.user.get_username(),)
-            )
-        else:
-            url = reverse('login')
+        url = reverse(
+            'blog:profile',
+            args=(self.request.user.get_username(),)
+        )
         return url
 
 
-class PostUpdateView(LoginRequiredMixin, UpdateView):
-    '''Отображение поста.'''
+class PostUpdateView(LoginRequiredMixin, DispatchMixin, UpdateView):
+    """Обновление поста."""
     model = Post
     form_class = PostForm
     template_name = 'blog/create.html'
 
-    def dispatch(self, request, *args, **kwargs):
-        self.post_id = kwargs['pk']
-        instance = get_object_or_404(Post, pk=self.post_id)
-        if instance.author != request.user:
-            return redirect('blog:post_detail', pk=self.post_id)
-        return super().dispatch(request, *args, **kwargs)
-
     def get_success_url(self):
-        url = reverse('blog:post_detail', args=[str(self.post_id)])
-        return url
+        return reverse('blog:post_detail', args=[str(self.post_id)])
 
 
-class PostDeleteView(LoginRequiredMixin, DeleteView):
-    '''Удаление поста.'''
+class PostDeleteView(LoginRequiredMixin, DispatchMixin, DeleteView):
+    """Удаление поста."""
     model = Post
     success_url = reverse_lazy('blog:index')
     template_name = 'blog/create.html'
 
-    def dispatch(self, request, *args, **kwargs):
-        instance = get_object_or_404(Post, pk=kwargs['pk'])
-        if instance.author != request.user:
-            return redirect('blog:post_detail', pk=kwargs['pk'])
-        return super().dispatch(request, *args, **kwargs)
-
 
 class PostDetailView(DetailView):
-    '''Детализированное отображение поста.'''
+    """Детализированное отображение поста."""
     model = Post
     template_name = 'blog/detail.html'
 
@@ -167,7 +166,7 @@ class PostDetailView(DetailView):
 
 @login_required
 def add_comment(request, pk):
-    '''Добавление комментария.'''
+    """Добавление комментария."""
     post = get_object_or_404(Post, pk=pk)
     form = CommentForm(request.POST)
     if form.is_valid():
@@ -175,14 +174,13 @@ def add_comment(request, pk):
         comment.author = request.user
         comment.post = post
         comment.save()
-        post.comment_count += 1
-        post.save()
+        Post.objects.annotate(comment_count=Count("comment"))
     return redirect('blog:post_detail', pk=pk)
 
 
 @login_required
 def edit_comment(request, comment_id, post_id):
-    '''Редактирование комментария.'''
+    """Редактирование комментария."""
     instance = get_object_or_404(Comment, id=comment_id, post_id=post_id)
     if instance.author != request.user:
         return redirect('login')
@@ -199,15 +197,14 @@ def edit_comment(request, comment_id, post_id):
 
 @login_required
 def delete_comment(request, comment_id, post_id):
-    '''Удаление комментария.'''
+    """Удаление комментария."""
     instance = get_object_or_404(Comment, id=comment_id, post_id=post_id)
     post = get_object_or_404(Post, pk=post_id)
     if instance.author != request.user:
-        return redirect('login')
+        return redirect('blog:post_detail', pk=post_id)
     context = {'comment': instance}
     if request.method == 'POST':
         instance.delete()
-        post.comment_count -= 1
-        post.save()
+        Post.objects.annotate(comment_count=Count("comment"))
         return redirect('blog:post_detail', pk=post_id)
     return render(request, 'blog/comment.html', context)

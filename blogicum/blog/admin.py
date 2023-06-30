@@ -3,6 +3,7 @@ from django.contrib import admin
 from .models import Category, Location, Post, Comment
 
 
+@admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     """Основные параметры админки отвечающие за раздел с постами."""
     list_display = (
@@ -31,18 +32,21 @@ class PostInline(admin.TabularInline):
     extra = 0
 
 
+@admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     """Раздел админки отвечающий за раздел категории."""
     inlines = (PostInline,)
     list_display = ('posts',)
 
 
+@admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
     """Раздел админки отвечающий за раздел местоположения."""
     inlines = (PostInline,)
     list_display = ('name',)
 
 
+@admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     """Раздел админки отвечающий за радел комментариев."""
     list_display = (
@@ -50,9 +54,3 @@ class CommentAdmin(admin.ModelAdmin):
         'author',
         'post'
     )
-
-
-admin.site.register(Post, PostAdmin)
-admin.site.register(Location, LocationAdmin)
-admin.site.register(Category, CategoryAdmin)
-admin.site.register(Comment, CommentAdmin)

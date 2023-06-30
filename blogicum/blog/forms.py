@@ -7,6 +7,7 @@ User = get_user_model()
 
 
 class PostForm(forms.ModelForm):
+    """Форма для публикаций."""
 
     class Meta:
         model = Post
@@ -21,6 +22,7 @@ class PostForm(forms.ModelForm):
 
 
 class CommentForm(forms.ModelForm):
+    """Форма для комментариев."""
 
     class Meta:
         model = Comment
@@ -28,6 +30,7 @@ class CommentForm(forms.ModelForm):
 
 
 class ProfileForm(forms.ModelForm):
+    """Форма для профиля."""
 
     class Meta:
         model = User

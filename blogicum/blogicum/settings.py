@@ -132,3 +132,5 @@ LOGIN_REDIRECT_URL = '/auth/login/'
 LOGIN_URL = '/auth/login'
 
 CSRF_FAILURE_VIEW = 'pages.views.csrf_failure'
+
+PAGINATE_BY = 10

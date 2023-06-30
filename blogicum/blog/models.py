@@ -5,32 +5,43 @@ from django.utils import timezone
 User = get_user_model()
 
 
-class IsPublishedCreatedAt(models.Model):
+class IsPublished(models.Model):
     """Абстрактная модель,
-    добавляет флаг is_published(опубликован ли пост),
-    и время создания поста created_at.
+    добавляет флаг is_published(опубликован ли пост).
     """
     is_published = models.BooleanField(
         'Опубликовано',
         default=True,
-        help_text='Снимите галочку, '
-        'чтобы скрыть публикацию.'
+        help_text=(
+         'Снимите галочку, '
+         'чтобы скрыть публикацию.'
+        )
     )
+
+    class Meta:
+        abstract = True
+
+
+class CreatedAt(models.Model):
+    """Абстрактная модель,
+    Определяет время создания поста created_at."""
     created_at = models.DateTimeField('Добавлено', auto_now_add=True)
 
     class Meta:
         abstract = True
 
 
-class Category(IsPublishedCreatedAt):
+class Category(IsPublished, CreatedAt):
     """Класс категорий постов."""
     title = models.CharField('Заголовок', max_length=256)
     description = models.TextField('Описание')
     slug = models.SlugField(
         'Идентификатор',
-        help_text='Идентификатор страницы для URL; '
-        'разрешены символы латиницы, '
-        'цифры, дефис и подчёркивание.',
+        help_text=(
+         'Идентификатор страницы для URL; '
+         'разрешены символы латиницы, '
+         'цифры, дефис и подчёркивание.',
+        ),
         unique=True
     )
 
@@ -42,7 +53,7 @@ class Category(IsPublishedCreatedAt):
         return self.title
 
 
-class Location(IsPublishedCreatedAt):
+class Location(IsPublished, CreatedAt):
     """Класс местоположений в постах."""
     name = models.CharField('Название места', max_length=256, unique=True)
 
@@ -54,7 +65,7 @@ class Location(IsPublishedCreatedAt):
         return self.name
 
 
-class Post(IsPublishedCreatedAt):
+class Post(IsPublished, CreatedAt):
     """Основной класс постов и вся информацию о них."""
     title = models.CharField('Заголовок', max_length=256)
     text = models.TextField('Текст')
@@ -62,9 +73,11 @@ class Post(IsPublishedCreatedAt):
     pub_date = models.DateTimeField(
         'Дата и время публикации',
         default=timezone.now(),
-        help_text='Если установить дату '
+        help_text=(
+                  'Если установить дату '
                   'и время в будущем — можно'
                   ' делать отложенные публикации.'
+        )
     )
     author = models.ForeignKey(
         User,
@@ -100,16 +113,16 @@ class Post(IsPublishedCreatedAt):
         return self.title
 
 
-class Comment(models.Model):
-    '''Класс комментариев.'''
+class Comment(CreatedAt):
+    """Класс комментариев."""
     text = models.TextField('Текст комментария')
+    created_at = models.DateTimeField('Добавлено', auto_now_add=True)
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
         verbose_name='Заголовок поста',
         related_name='comment',
     )
-    created_at = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(
         User,
         verbose_name='Автор',

@@ -6,9 +6,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse, reverse_lazy
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.views.generic import (
     CreateView, DeleteView, DetailView, ListView, UpdateView
 )
@@ -159,12 +160,23 @@ class PostDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
         context['form'] = CommentForm()
         context['comments'] = (
             self.object.comment.select_related(
                 'author'
             )
         )
+        if self.request.user.id is None:
+            context['form'] = False
+            context['comments'] = False
+        elif self.object.filter(user=self.request.user).exists():
+            context['form'] = True
+            context['comments'] = True
+        else:
+            context['form'] = False
+            context['comments'] = False
+
         return context
 
 

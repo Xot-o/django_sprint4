@@ -6,7 +6,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator
-from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse, reverse_lazy
 from django.db.models import Count, Q
@@ -158,7 +157,17 @@ class PostDetailView(DetailView):
     model = Post
     template_name = 'blog/detail.html'
 
+    def get_object(self):
+        queryset = Post.objects.filter(
+            Q(is_published=True) | Q(author=self.request.user)
+        )
+        return get_object_or_404(
+            queryset,
+            pk=self.kwargs.get('pk'),
+        )
+
     def get_context_data(self, **kwargs):
+        """Получение данных контекста."""
         context = super().get_context_data(**kwargs)
 
         context['form'] = CommentForm()
@@ -167,16 +176,7 @@ class PostDetailView(DetailView):
                 'author'
             )
         )
-        if self.request.user.id is None:
-            context['form'] = False
-            context['comments'] = False
-        elif self.object.filter(user=self.request.user).exists():
-            context['form'] = True
-            context['comments'] = True
-        else:
-            context['form'] = False
-            context['comments'] = False
-
+        
         return context
 
 

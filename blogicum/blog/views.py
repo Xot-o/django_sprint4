@@ -176,7 +176,7 @@ class PostDetailView(DetailView):
                 'author'
             )
         )
-        
+
         return context
 
 

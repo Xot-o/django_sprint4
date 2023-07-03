@@ -27,8 +27,9 @@ class ProfileLoginView(LoginView):
         return url
 
 
-def get_page_obj(paginator, page_number):
+def get_page_obj(posts, page_number):
     """Получаем страницу с постами."""
+    paginator = Paginator(posts, settings.PAGINATE_BY)
     get_page_obj = paginator.get_page(page_number)
     return get_page_obj
 
@@ -56,9 +57,8 @@ def profile_view(request, username):
     ).annotate(comment_count=Count('comment__post'))
     can_edit_profile = request.user == profile_user
 
-    paginator = Paginator(posts, settings.PAGINATE_BY)
     page_number = request.GET.get('page')
-    page_obj = get_page_obj(paginator, page_number)
+    page_obj = get_page_obj(posts, page_number)
 
     post_images = [post.image for post in posts if post.image]
 
@@ -96,9 +96,8 @@ def category_posts(request, category_slug):
         pub_date__lte=dt.datetime.now(),
         is_published=True,
     )
-    paginator = Paginator(post_list, settings.PAGINATE_BY)
     page_number = request.GET.get('page')
-    page_obj = get_page_obj(paginator, page_number)
+    page_obj = get_page_obj(post_list, page_number)
     context = {
         'category': category,
         'page_obj': page_obj
@@ -106,7 +105,7 @@ def category_posts(request, category_slug):
     return render(request, 'blog/category.html', context)
 
 
-class DispatchMixin:
+class UserIsAuthorMixin:
     def dispatch(self, request, *args, **kwargs):
         """Отправляет изменения/удаления поста."""
         self.post_id = kwargs['pk']
@@ -135,7 +134,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         return url
 
 
-class PostUpdateView(LoginRequiredMixin, DispatchMixin, UpdateView):
+class PostUpdateView(LoginRequiredMixin, UserIsAuthorMixin, UpdateView):
     """Обновление поста."""
     model = Post
     form_class = PostForm
@@ -145,7 +144,7 @@ class PostUpdateView(LoginRequiredMixin, DispatchMixin, UpdateView):
         return reverse('blog:post_detail', args=[str(self.post_id)])
 
 
-class PostDeleteView(LoginRequiredMixin, DispatchMixin, DeleteView):
+class PostDeleteView(LoginRequiredMixin, UserIsAuthorMixin, DeleteView):
     """Удаление поста."""
     model = Post
     success_url = reverse_lazy('blog:index')
